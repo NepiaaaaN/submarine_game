@@ -89,10 +89,17 @@ void enemyMove(){
     }
   }
 }
-void enemyDisplay(){
+void enemyDisplay(){  // 敵の表示
   for(int i=0; i<12; i++){
-    if( g_enemyDirection[i] < 2 ){
-      image(enemy[g_enemyDirection[i]], g_enemyX[i], g_enemyY[i]);
+    if( g_enemyDirection[i] < 2 ){  // 敵が未使用でないかの判別
+      image(enemy[g_enemyDirection[i]], g_enemyX[i], g_enemyY[i]);  // 敵の表示
+      for(int j=0; j<6; j++){ // 爆弾との当たり判定
+        if( ( g_bombPlayerY[j] < g_enemyY[i] + 21 ) && ( g_bombPlayerY[j] + 16 > g_enemyY[i] ) && (g_bombPlayerX[j] < g_enemyX[i] + 76) && (g_bombPlayerX[j] + 10 > g_enemyX[i]) ){
+          g_bombPlayerY[j] = -20;       // 爆弾を未使用にする
+          g_enemyDirection[i] = 2;  // 敵を未使用にする
+          break;
+        }
+      }
     }
   }
 }
