@@ -20,6 +20,7 @@ int g_bombWait;  // 爆弾投下の間隔
 int[] g_keyState = new int[3];  // キーの状態, 1だったら押されている0なら押されていない [0]左キーの状態 [1]右キーの状態 [2]スペースキーの状態
 int g_playerSink;   // プレイヤー沈む
 int g_messageCount; // メッセージ用カウンタ
+int score;
 
 void setup(){
   size(600,450); // 画面サイズ
@@ -48,6 +49,7 @@ void gameInit(){
   Arrays.fill(g_bombEnemyY, -20); // -20 : 未使用
   g_playerSink = 0;
   g_messageCount = 0;
+  score = 0;
 }
 void gameTitle(){
   g_gameSequence = 1;  //(仮)何もせずゲームプレイへ
@@ -60,6 +62,7 @@ void gamePlay(){
   enemyDisplay();                          // 敵の表示
   bombPlayerMove();                        // プレイヤー爆弾
   bombEnemyMove();                         // 敵の爆弾
+  scoreDisp();  // スコア表示
 }
 void playerMove(){
   if( (g_keyState[0] == 1) && (g_playerX > 0) ){  // 左キー
@@ -81,6 +84,7 @@ void gameOver(){
   image(image_backGround, 0, 90, 600, 360); // 背景表示
   enemyDisplay(); // 敵の表示
   bombEnemyMove();  // 敵の爆弾
+  scoreDisp();  // スコア表示
   g_messageCount++;
   if ( g_messageCount < 100 ) {
     g_playerSink++;   // プレイヤーを沈ませる
@@ -128,6 +132,7 @@ void enemyDisplay(){  // 敵の表示
           g_bombPlayerY[j] = -20;       // 爆弾を未使用にする
           g_enemyDirection[i] = 2;  // 敵を爆発にセット
           g_enemyCount[i] = 0;    // 爆発カウント
+          score += 100;   // スコア100追加
           break;
         }
       }
@@ -237,4 +242,9 @@ void bombEnemyMove(){ // 敵爆弾の表示と移動
       image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
     }
   }
+}
+void scoreDisp(){
+  textSize(24);
+  fill(0,0,0);
+  text("score:" + score, 10, 25);
 }
