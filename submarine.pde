@@ -15,8 +15,11 @@ int[] g_bombPlayerX = new int[6];  // プレイヤー爆弾のx座標
 int[] g_bombPlayerY = new int[6];  // プレイヤー爆弾のy座標
 int[] g_bombEnemyX = new int[20];  // 敵爆弾のx座標
 int[] g_bombEnemyY = new int[20];  // 敵爆弾のy座標
+int[] g_bombEnemyCount = new int[20]; // 水柱
 int g_bombWait;  // 爆弾投下の間隔
 int[] g_keyState = new int[3];  // キーの状態, 1だったら押されている0なら押されていない [0]左キーの状態 [1]右キーの状態 [2]スペースキーの状態
+int g_playerSink;   // プレイヤー沈む
+int g_messageCount; // メッセージ用カウンタ
 
 void setup(){
   size(600,450); // 画面サイズ
@@ -43,6 +46,8 @@ void gameInit(){
   g_bombWait = 0;
   Arrays.fill(g_keyState, 0);  // 1:押下中 0:押されていない
   Arrays.fill(g_bombEnemyY, -20); // -20 : 未使用
+  g_playerSink = 0;
+  g_messageCount = 0;
 }
 void gameTitle(){
   g_gameSequence = 1;  //(仮)何もせずゲームプレイへ
@@ -72,6 +77,19 @@ void playerMove(){
   }
 }
 void gameOver(){
+  image(image_player, g_playerX, 58 + (g_playerSink/2) );  // プレイヤー表示
+  image(image_backGround, 0, 90, 600, 360); // 背景表示
+  enemyDisplay(); // 敵の表示
+  bombEnemyMove();  // 敵の爆弾
+  g_messageCount++;
+  if ( g_messageCount < 100 ) {
+    g_playerSink++;   // プレイヤーを沈ませる
+  }
+  if( g_messageCount > 60 ){
+    textSize(70);
+    fill(255, 0, 0);
+    text("GAME OVER", 110, 240);
+  }
 }
 void imgLoad(){
   image_backGround = loadImage("sm_bg.png");  //背景絵の読み込み
@@ -194,13 +212,27 @@ void bombEnemyAdd(int xx, int yy) {
   }
 }
 void bombEnemyMove(){ // 敵爆弾の表示と移動
-  for (int i = 0; i < 20; ++i) {
-    if ( g_bombEnemyY[i] > 0 ) {  // 発射中なので移動
-      g_bombEnemyY[i] -= 1;
+  for (int i = 0; i < 20; i++) {
+    if( g_bombEnemyY[i] > 60 ){ // 発射中なので移動
+      g_bombEnemyY[i] -= 1; // 敵の爆弾を上に移動
+      if( g_bombEnemyY[i] < 90 ){  // 海面まで来た
+        g_bombEnemyY[i] = 60;   // 水柱の表示位置
+        g_bombEnemyCount[i] = 10; // 表示時間
+      }
     }
-    if ( g_bombEnemyY[i] < 90 ) { // 海面まで来た
-      g_bombEnemyY[i] = -20;  // 未使用にする
+    if( g_bombEnemyY[i] == 60 ){  // 60ってなに？？？★
+      fill(255, 80, 10);  // シェイプを塗りつぶす色を設定
+      rect(g_bombEnemyX[i], g_bombEnemyY[i], 16, 30); // 視覚表示(水柱)
+      g_bombEnemyCount[i]--;
+      if ( g_bombEnemyCount[i] == 0 ) { // 敵の爆弾カウントが0になったら...
+        g_bombEnemyY[i] = -20;  // 未使用に戻す
+      }
+      // プレイヤーとの当たり判定
+      if( (g_bombEnemyX[i] < g_playerX + g_playerWidth) && (g_bombEnemyX[i]+16 > g_playerX)){
+        g_gameSequence = 2; // ゲームオーバーへ
+      }
+    } else { // 敵の爆弾カウントが0でない場合...
+      image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
     }
-    image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
   }
 }
