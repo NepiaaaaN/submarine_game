@@ -18,6 +18,8 @@ int[] g_bombEnemyY = new int[20];  // 敵爆弾のy座標
 int[] g_bombEnemyCount = new int[20]; // 水柱
 int g_bombWait;  // 爆弾投下の間隔
 int[] g_keyState = new int[3];  // キーの状態, 1だったら押されている0なら押されていない [0]左キーの状態 [1]右キーの状態 [2]スペースキーの状態
+int g_playerSink;   // プレイヤー沈む
+int g_messageCount; // メッセージ用カウンタ
 
 void setup(){
   size(600,450); // 画面サイズ
@@ -44,6 +46,8 @@ void gameInit(){
   g_bombWait = 0;
   Arrays.fill(g_keyState, 0);  // 1:押下中 0:押されていない
   Arrays.fill(g_bombEnemyY, -20); // -20 : 未使用
+  g_playerSink = 0;
+  g_messageCount = 0;
 }
 void gameTitle(){
   g_gameSequence = 1;  //(仮)何もせずゲームプレイへ
@@ -73,13 +77,19 @@ void playerMove(){
   }
 }
 void gameOver(){
+  image(image_player, g_playerX, 58 + (g_playerSink/2) );  // プレイヤー表示
   image(image_backGround, 0, 90, 600, 360); // 背景表示
-  image(image_player, g_playerX, 58 );  // プレイヤー表示
   enemyDisplay(); // 敵の表示
   bombEnemyMove();  // 敵の爆弾
-  textSize(70);
-  fill(255, 0, 0);
-  text("GAME OVER", 110, 240);
+  g_messageCount++;
+  if ( g_messageCount < 100 ) {
+    g_playerSink++;   // プレイヤーを沈ませる
+  }
+  if( g_messageCount > 60 ){
+    textSize(70);
+    fill(255, 0, 0);
+    text("GAME OVER", 110, 240);
+  }
 }
 void imgLoad(){
   image_backGround = loadImage("sm_bg.png");  //背景絵の読み込み
