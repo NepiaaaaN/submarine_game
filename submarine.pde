@@ -1,6 +1,6 @@
 import java.util.Arrays;  // for fill
 
-PImage image_backGround, image_player, bombPlayer, bombEnemy;
+PImage image_backGround, image_player, bombPlayer, bombEnemy, title;
 PImage[] enemy = new PImage[4];
 int g_gameSequence; // ゲームの流れを管理
 int g_playerX;  // プレイヤーx座標
@@ -52,7 +52,13 @@ void gameInit(){
   score = 0;
 }
 void gameTitle(){
-  g_gameSequence = 1;  //(仮)何もせずゲームプレイへ
+  image(title, 0, 0, 600, 450); // タイトル画像の表示
+  g_messageCount++;
+  if ( (g_messageCount > 60) && ((g_messageCount % 60) < 40) ) {  // 何もさせない待ち時間を作る
+    textSize(30);
+    fill(40, 250, 40);
+    text("Push any key!", 210, 320);
+  }
 }
 void gamePlay(){
   image(image_backGround, 0,90,600,360);   // 背景表示(表示座標, サイズ)
@@ -93,6 +99,11 @@ void gameOver(){
     textSize(70);
     fill(255, 0, 0);
     text("GAME OVER", 110, 240);
+    if( (g_messageCount > 120) && ((g_messageCount % 60) < 40) ){
+      textSize(30);
+      fill(40, 250, 40);
+      text("Push any key!", 210, 320);
+    }
   }
 }
 void imgLoad(){
@@ -104,6 +115,7 @@ void imgLoad(){
   enemy[3] = loadImage("sm_explosion2.png");
   bombPlayer = loadImage("sm_bombP.png");
   bombEnemy = loadImage("sm_bombE.png");
+  title = loadImage("sm_title.png");  // タイトル画像
 }
 void enemyMove(){
   for(int i=0; i<12; i++){
@@ -200,6 +212,13 @@ void keyPressed(){  // キーが押されるたびに呼ばれる
     if( keyCode == RIGHT ) g_keyState[1] = 1;
   }
   if( key == ' ' ) g_keyState[2] = 1;
+  if( (g_gameSequence == 2) && (g_messageCount > 120) ){ // GAME OVER中
+    gameInit();
+  }
+  if( (g_gameSequence == 0) && (g_messageCount > 60) ){ // タイトル中
+    g_gameSequence = 1;  // ゲーム開始へ
+    g_messageCount = 0; // カウンタクリア
+  }
 }
 void keyReleased(){  // キーを離された時に呼ばれる
   if( key == CODED ){  // キーを離した時に直前までキーを押していたかを判別
