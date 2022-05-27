@@ -140,7 +140,9 @@ void enemyDisplay(){  // 敵の表示
       }
     }
     if ( (g_enemyDirection[i] < 2) && (random(1000) < 10) ) {  // 爆弾発生率
-      bombEnemyAdd(int(g_enemyX[i]), g_enemyY[i]);  // 爆弾発射
+      if( g_gameSequence == 1 ){
+        bombEnemyAdd(int(g_enemyX[i]), g_enemyY[i]);  // ゲーム中だけ発射
+      }
     }
   }
 }
