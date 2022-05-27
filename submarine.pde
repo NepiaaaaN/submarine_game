@@ -73,6 +73,13 @@ void playerMove(){
   }
 }
 void gameOver(){
+  image(image_backGround, 0, 90, 600, 360); // 背景表示
+  image(image_player, g_playerX, 58 );  // プレイヤー表示
+  enemyDisplay(); // 敵の表示
+  bombEnemyMove();  // 敵の爆弾
+  textSize(70);
+  fill(255, 0, 0);
+  text("GAME OVER", 110, 240);
 }
 void imgLoad(){
   image_backGround = loadImage("sm_bg.png");  //背景絵の読み込み
@@ -209,6 +216,10 @@ void bombEnemyMove(){ // 敵爆弾の表示と移動
       g_bombEnemyCount[i]--;
       if ( g_bombEnemyCount[i] == 0 ) { // 敵の爆弾カウントが0になったら...
         g_bombEnemyY[i] = -20;  // 未使用に戻す
+      }
+      // プレイヤーとの当たり判定
+      if( (g_bombEnemyX[i] < g_playerX + g_playerWidth) && (g_bombEnemyX[i]+16 > g_playerX)){
+        g_gameSequence = 2; // ゲームオーバーへ
       }
     } else { // 敵の爆弾カウントが0でない場合...
       image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
