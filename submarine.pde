@@ -15,6 +15,7 @@ int[] g_bombPlayerX = new int[6];  // プレイヤー爆弾のx座標
 int[] g_bombPlayerY = new int[6];  // プレイヤー爆弾のy座標
 int[] g_bombEnemyX = new int[20];  // 敵爆弾のx座標
 int[] g_bombEnemyY = new int[20];  // 敵爆弾のy座標
+int[] g_bombEnemyCount = new int[20]; // 水柱
 int g_bombWait;  // 爆弾投下の間隔
 int[] g_keyState = new int[3];  // キーの状態, 1だったら押されている0なら押されていない [0]左キーの状態 [1]右キーの状態 [2]スペースキーの状態
 
@@ -194,13 +195,23 @@ void bombEnemyAdd(int xx, int yy) {
   }
 }
 void bombEnemyMove(){ // 敵爆弾の表示と移動
-  for (int i = 0; i < 20; ++i) {
-    if ( g_bombEnemyY[i] > 0 ) {  // 発射中なので移動
-      g_bombEnemyY[i] -= 1;
+  for (int i = 0; i < 20; i++) {
+    if( g_bombEnemyY[i] > 60 ){ // 発射中なので移動
+      g_bombEnemyY[i] -= 1; // 敵の爆弾を上に移動
+      if( g_bombEnemyY[i] < 90 ){  // 海面まで来た
+        g_bombEnemyY[i] = 60;   // 水柱の表示位置
+        g_bombEnemyCount[i] = 10; // 表示時間
+      }
     }
-    if ( g_bombEnemyY[i] < 90 ) { // 海面まで来た
-      g_bombEnemyY[i] = -20;  // 未使用にする
+    if( g_bombEnemyY[i] == 60 ){  // 60ってなに？？？★
+      fill(255, 80, 10);  // シェイプを塗りつぶす色を設定
+      rect(g_bombEnemyX[i], g_bombEnemyY[i], 16, 30); // 視覚表示(水柱)
+      g_bombEnemyCount[i]--;
+      if ( g_bombEnemyCount[i] == 0 ) { // 敵の爆弾カウントが0になったら...
+        g_bombEnemyY[i] = -20;  // 未使用に戻す
+      }
+    } else { // 敵の爆弾カウントが0でない場合...
+      image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
     }
-    image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
   }
 }
