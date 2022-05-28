@@ -1,8 +1,14 @@
 import java.util.Arrays;  // for fill
 
+public enum GameState {
+  GAMESTART,
+  GAMEPLAY,
+  GAMEOVER
+};
+
 PImage image_backGround, image_player, bombPlayer, bombEnemy, title;
 PImage[] enemy = new PImage[4];
-int g_gameSequence; // ゲームの流れを管理
+GameState g_gameSequence; // ゲームの流れを管理
 int g_playerX;  // プレイヤーx座標
 //int g_playerY;  // プレイヤーy座標(今回は使用しない)
 int g_playerWidth = 120;  //プレイヤーの幅
@@ -22,6 +28,8 @@ int g_playerSink;   // プレイヤー沈む
 int g_messageCount; // メッセージ用カウンタ
 int score;
 
+
+
 void setup(){
   size(600,450); // 画面サイズ
   noStroke();
@@ -29,18 +37,24 @@ void setup(){
   imgLoad();
   gameInit(); //ゲーム情報の初期化
 }
+
 void draw(){
   background(0,255,255);
-  if( g_gameSequence == 0 ){
-    gameTitle();  //タイトル表示
-  } else if( g_gameSequence == 1 ){
-    gamePlay();   //ゲームプレイ
-  } else {
-    gameOver();
+  switch (g_gameSequence) {
+    case GAMESTART :
+      gameTitle();
+    break;
+    case GAMEPLAY :
+      gamePlay();
+    break;
+    case GAMEOVER :
+      gameOver();
+    break;
   }
 }
-void gameInit(){
-  g_gameSequence = 0;
+
+void gameInit(){  // 初期化関数
+  g_gameSequence = GameState.GAMESTART;
   g_playerX = 240;
   Arrays.fill(g_enemyDirection, 4);  //0:左向き 1:右向き 2.3 : 爆発 4:未使用
   Arrays.fill(g_bombPlayerY, -20);  // -20 : 未使用
@@ -51,6 +65,7 @@ void gameInit(){
   g_messageCount = 0;
   score = 0;
 }
+
 void gameTitle(){
   image(title, 0, 0, 600, 450); // タイトル画像の表示
   g_messageCount++;
@@ -60,6 +75,7 @@ void gameTitle(){
     text("Push any key!", 210, 320);
   }
 }
+
 void gamePlay(){
   image(image_backGround, 0,90,600,360);   // 背景表示(表示座標, サイズ)
   playerMove();                            // プレイヤー移動
@@ -70,6 +86,7 @@ void gamePlay(){
   bombEnemyMove();                         // 敵の爆弾
   scoreDisp();  // スコア表示
 }
+
 void playerMove(){
   if( (g_keyState[0] == 1) && (g_playerX > 0) ){  // 左キー
     g_playerX -= 3;  // 左へ移動
@@ -85,6 +102,7 @@ void playerMove(){
     bombPlayerAdd();  // プレイヤー爆弾投下
   }
 }
+
 void gameOver(){
   image(image_player, g_playerX, 58 + (g_playerSink/2) );  // プレイヤー表示
   image(image_backGround, 0, 90, 600, 360); // 背景表示
@@ -106,6 +124,7 @@ void gameOver(){
     }
   }
 }
+
 void imgLoad(){
   image_backGround = loadImage("sm_bg.png");  //背景絵の読み込み
   image_player = loadImage("sm_player.png");
@@ -117,6 +136,7 @@ void imgLoad(){
   bombEnemy = loadImage("sm_bombE.png");
   title = loadImage("sm_title.png");  // タイトル画像
 }
+
 void enemyMove(){
   for(int i=0; i<12; i++){
     if ( g_enemyDirection[i] < 2 ) { // 生存中の敵のみ
@@ -133,6 +153,7 @@ void enemyMove(){
     enemyAdd();
   }
 }
+
 void enemyDisplay(){  // 敵の表示
   for(int i=0; i<12; i++){
     if( g_enemyDirection[i] < 4 ){  // 敵が未使用でないかの判別
@@ -157,12 +178,13 @@ void enemyDisplay(){  // 敵の表示
       }
     }
     if ( (g_enemyDirection[i] < 2) && (random(1000) < 10) ) {  // 爆弾発生率
-      if( g_gameSequence == 1 ){
+      if( g_gameSequence == GameState.GAMEPLAY ){
         bombEnemyAdd(int(g_enemyX[i]), g_enemyY[i]);  // ゲーム中だけ発射
       }
     }
   }
 }
+
 void enemyAdd(){
   for(int i=0; i<12; i++){
     // 未使用の中から敵を追加する
@@ -181,6 +203,7 @@ void enemyAdd(){
     }
   }
 }
+
 void bombPlayerAdd(){
   for(int i=0; i<6; i++){
     if( g_bombPlayerY[i] == -20 ){  // 未使用の爆弾を使う
@@ -190,6 +213,7 @@ void bombPlayerAdd(){
     }
   }
 }
+
 void bombPlayerMove(){
   int bombCount = 6;
   for( int i=0; i<6; i++ ){
@@ -206,20 +230,22 @@ void bombPlayerMove(){
     image(bombPlayer, 230+i*26,20);
   }
 }
+
 void keyPressed(){  // キーが押されるたびに呼ばれる
   if( key == CODED ){  // CODED = keyが文字で表せないものだったときの処置をするためのフラグ
     if( keyCode == LEFT ) g_keyState[0] = 1;
     if( keyCode == RIGHT ) g_keyState[1] = 1;
   }
   if( key == ' ' ) g_keyState[2] = 1;
-  if( (g_gameSequence == 2) && (g_messageCount > 120) ){ // GAME OVER中
+  if( (g_gameSequence == GameState.GAMEOVER) && (g_messageCount > 120) ){ // GAME OVER中
     gameInit();
   }
-  if( (g_gameSequence == 0) && (g_messageCount > 60) ){ // タイトル中
-    g_gameSequence = 1;  // ゲーム開始へ
+  if( (g_gameSequence == GameState.GAMESTART) && (g_messageCount > 60) ){ // タイトル中
+    g_gameSequence = GameState.GAMEPLAY;  // ゲーム開始へ
     g_messageCount = 0; // カウンタクリア
   }
 }
+
 void keyReleased(){  // キーを離された時に呼ばれる
   if( key == CODED ){  // キーを離した時に直前までキーを押していたかを判別
     if( keyCode == LEFT ) g_keyState[0] = 0;  // 直前まで押していたキーが左ならg_keyState[0]の値を0にする。以下同様。
@@ -227,6 +253,7 @@ void keyReleased(){  // キーを離された時に呼ばれる
   }
   if( key == ' ' ) g_keyState[2] = 0;
 }
+
 void bombEnemyAdd(int xx, int yy) {
   for(int i=0; i < 20; i++){
     if ( g_bombEnemyY[i] == -20 ) { // 未使用のものを使う
@@ -237,6 +264,7 @@ void bombEnemyAdd(int xx, int yy) {
     }
   }
 }
+
 void bombEnemyMove(){ // 敵爆弾の表示と移動
   for (int i = 0; i < 20; i++) {
     if( g_bombEnemyY[i] > 60 ){ // 発射中なので移動
@@ -255,13 +283,14 @@ void bombEnemyMove(){ // 敵爆弾の表示と移動
       }
       // プレイヤーとの当たり判定
       if( (g_bombEnemyX[i] < g_playerX + g_playerWidth) && (g_bombEnemyX[i]+16 > g_playerX)){
-        g_gameSequence = 2; // ゲームオーバーへ
+        g_gameSequence = GameState.GAMEOVER; // ゲームオーバーへ
       }
     } else { // 敵の爆弾カウントが0でない場合...
       image(bombEnemy, g_bombEnemyX[i], g_bombEnemyY[i]); // 爆弾表示
     }
   }
 }
+
 void scoreDisp(){
   textSize(24);
   fill(0,0,0);
