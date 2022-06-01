@@ -6,6 +6,14 @@ public enum GameState {
   GAMEOVER
 };
 
+public enum EnemyDirection {
+  LEFTWARD,
+  RIGHTWARD,
+  EXPLOSION1,
+  EXPLOSION2,
+  UNUSED
+};
+
 PImage image_backGround, image_player, bombPlayer, bombEnemy, title;
 PImage[] enemy = new PImage[4];
 GameState g_gameSequence; // ゲームの流れを管理
@@ -14,7 +22,7 @@ int g_playerX;  // プレイヤーx座標
 int g_playerWidth = 120;  //プレイヤーの幅
 float[] g_enemyX = new float[12];  // 敵x座標
 int[] g_enemyY = new int[12];  // 敵y座標
-int[] g_enemyDirection = new int[12];  // 0:左向き 1:右向き 2.3 : 爆発 4:未使用
+EnemyDirection[] g_enemyDirection = new EnemyDirection[12];
 float[] g_enemySpeed = new float[12];  // 敵の移動速度
 int[] g_enemyCount = new int[12];   // 敵の爆発カウント
 int[] g_bombPlayerX = new int[6];  // プレイヤー爆弾のx座標
@@ -28,9 +36,7 @@ int g_playerSink;   // プレイヤー沈む
 int g_messageCount; // メッセージ用カウンタ
 int score;
 
-
-
-void setup(){
+void setup(){ // 開始時に一回だけ呼ばれる
   size(600,450); // 画面サイズ
   noStroke();
   frameRate(30); //フレームレート
@@ -38,7 +44,7 @@ void setup(){
   gameInit(); //ゲーム情報の初期化
 }
 
-void draw(){
+void draw(){  // 毎フレーム呼ばれる
   background(0,255,255);
   switch (g_gameSequence) {
     case GAMESTART :
@@ -55,8 +61,8 @@ void draw(){
 
 void gameInit(){  // 初期化関数
   g_gameSequence = GameState.GAMESTART;
-  g_playerX = 240;
-  Arrays.fill(g_enemyDirection, 4);  //0:左向き 1:右向き 2.3 : 爆発 4:未使用
+  g_playerX = 240;  // Playerの初期X座標
+  Arrays.fill(g_enemyDirection, EnemyDirection.UNUSED);
   Arrays.fill(g_bombPlayerY, -20);  // -20 : 未使用
   g_bombWait = 0;
   Arrays.fill(g_keyState, 0);  // 1:押下中 0:押されていない
@@ -139,14 +145,14 @@ void imgLoad(){
 
 void enemyMove(){
   for(int i=0; i<12; i++){
-    if ( g_enemyDirection[i] < 2 ) { // 生存中の敵のみ
+    if ( isAlive(g_enemyDirection[i]) ) { // 生存中の敵のみ
       g_enemyX[i] += g_enemySpeed[i];  // 敵x座標に移動速度を足していくことで移動を実現
     }
-    if( ( g_enemyDirection[i] == 0 ) && ( g_enemyX[i] < -80 ) ){  // 左向きの敵が画面外に出たら
-      g_enemyDirection[i] = 4;  // 未使用にする
+    if( ( g_enemyDirection[i] == EnemyDirection.LEFTWARD ) && ( g_enemyX[i] < -80 ) ){  // 左向きの敵が画面外に出たら
+      g_enemyDirection[i] = EnemyDirection.UNUSED;  // 未使用にする
     }
-    if( ( g_enemyDirection[i] == 1 ) && ( g_enemyX[i] > 600 ) ){  // 右向きの敵が画面外に出たら
-      g_enemyDirection[i] = 4;  // 未使用にする
+    if( ( g_enemyDirection[i] == EnemyDirection.RIGHTWARD ) && ( g_enemyX[i] > 600 ) ){  // 右向きの敵が画面外に出たら
+      g_enemyDirection[i] = EnemyDirection.UNUSED;  // 未使用にする
     }
   }
   if( random(1000) < 20 ){  // 敵の発生率はrandom関数内の数値で調整(高いほど出現率少ない, 低いほど多い)
@@ -156,28 +162,33 @@ void enemyMove(){
 
 void enemyDisplay(){  // 敵の表示
   for(int i=0; i<12; i++){
-    if( g_enemyDirection[i] < 4 ){  // 敵が未使用でないかの判別
-      image(enemy[g_enemyDirection[i]], g_enemyX[i], g_enemyY[i]);  // 敵の表示
+    if( g_enemyDirection[i] != EnemyDirection.UNUSED ){  // 敵が未使用でないかの判別
+      image(enemy[g_enemyDirection[i].ordinal()], g_enemyX[i], g_enemyY[i]);  // 敵の表示
     }
-    if (g_enemyDirection[i] < 2) {  // 生存中の敵のみ
+    if ( isAlive(g_enemyDirection[i]) ){  // 生存中の敵のみ
       for(int j=0; j<6; j++){ // 爆弾との当たり判定
         if( ( g_bombPlayerY[j] < g_enemyY[i] + 21 ) && ( g_bombPlayerY[j] + 16 > g_enemyY[i] ) && (g_bombPlayerX[j] < g_enemyX[i] + 76) && (g_bombPlayerX[j] + 10 > g_enemyX[i]) ){
           g_bombPlayerY[j] = -20;       // 爆弾を未使用にする
-          g_enemyDirection[i] = 2;  // 敵を爆発にセット
+          g_enemyDirection[i] = EnemyDirection.EXPLOSION1;  // 敵を爆発にセット
           g_enemyCount[i] = 0;    // 爆発カウント
           score += 100;   // スコア100追加
           break;
         }
       }
     }
-    if ( (g_enemyDirection[i] == 2) || (g_enemyDirection[i] == 3) ) {  // 爆発中
+    if ( (g_enemyDirection[i] == EnemyDirection.EXPLOSION1) || (g_enemyDirection[i] == EnemyDirection.EXPLOSION2) ) {  // 爆発中
       g_enemyCount[i]++;
-      g_enemyDirection[i] = (g_enemyCount[i] / 3) % 2 + 2;  // 爆発の絵を交互にする(3=切替フレームレート, %2=絵の枚数, +2=配列の添字に合わせるため)
+      int explosionFlag = (g_enemyCount[i] / 3) % 2; // 爆発の絵を交互にする(3=切替フレームレート, %2=絵の枚数) 0か1
+      if(explosionFlag == 0){ // ★ここ直したい
+        g_enemyDirection[i] = EnemyDirection.EXPLOSION1;
+      } else if(explosionFlag == 1){
+        g_enemyDirection[i] = EnemyDirection.EXPLOSION2;
+      }
       if ( g_enemyCount[i] > 60 ) {   // 爆発のアニメ終了
-        g_enemyDirection[i] = 4;  // // 0:左向き 1:右向き 2.3 : 爆発 4:未使用
+        g_enemyDirection[i] = EnemyDirection.UNUSED;
       }
     }
-    if ( (g_enemyDirection[i] < 2) && (random(1000) < 10) ) {  // 爆弾発生率
+    if ( isAlive(g_enemyDirection[i])  && (random(1000) < 10) ) {  // 爆弾発生率
       if( g_gameSequence == GameState.GAMEPLAY ){
         bombEnemyAdd(int(g_enemyX[i]), g_enemyY[i]);  // ゲーム中だけ発射
       }
@@ -188,14 +199,14 @@ void enemyDisplay(){  // 敵の表示
 void enemyAdd(){
   for(int i=0; i<12; i++){
     // 未使用の中から敵を追加する
-    if( g_enemyDirection[i] == 4 ){   // 0:左向き 1:右向き 2.3 : 爆発 4:未使用
+    if( g_enemyDirection[i] == EnemyDirection.UNUSED ){   // 0:左向き 1:右向き 2.3 : 爆発 4:未使用
       g_enemySpeed[i] = random(0.5, 2.5);  // 0.5~2.5の間で速度設定されている
       if( random(100) < 50 ){  // 50%の確率で左向きの敵、右向きの敵分配
-        g_enemyDirection[i] = 0;  // 左向きの敵
+        g_enemyDirection[i] = EnemyDirection.LEFTWARD;  // 左向きの敵
         g_enemyX[i] = 600;  // 出発地点
         g_enemySpeed[i] = -g_enemySpeed[i];  // 左へ移動
       } else {
-        g_enemyDirection[i] = 1;  // 右向きの敵
+        g_enemyDirection[i] = EnemyDirection.RIGHTWARD;  // 右向きの敵
         g_enemyX[i] = -80;  // 出発地点
       }
       g_enemyY[i] = int(random(120, 420));  // Y座標120~420で敵を出現させる
@@ -274,7 +285,7 @@ void bombEnemyMove(){ // 敵爆弾の表示と移動
         g_bombEnemyCount[i] = 10; // 表示時間
       }
     }
-    if( g_bombEnemyY[i] == 60 ){  // 60ってなに？？？★
+    if( g_bombEnemyY[i] == 60 ){  // 60 = 水柱の高さ
       fill(255, 80, 10);  // シェイプを塗りつぶす色を設定
       rect(g_bombEnemyX[i], g_bombEnemyY[i], 16, 30); // 視覚表示(水柱)
       g_bombEnemyCount[i]--;
@@ -295,4 +306,12 @@ void scoreDisp(){
   textSize(24);
   fill(0,0,0);
   text("score:" + score, 10, 25);
+}
+
+boolean isAlive(EnemyDirection enemyDirection){
+  if((enemyDirection == EnemyDirection.LEFTWARD) || (enemyDirection == EnemyDirection.RIGHTWARD)){
+    return true;
+  }else{
+    return false;
+  }
 }
